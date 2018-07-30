@@ -4,12 +4,12 @@ MAINTAINER Chris McKee <pcdevils@gmail.com>
 
 # Define rancher version
 ENV RANCHER_CLI_VERSION=v2.0.4-rc1 \
-	YAML_VERSION=1.6 \
-	RANCHER_URL= \
-	RANCHER_ACCESS_KEY= \
-	RANCHER_SECRET_KEY= \
-	RANCHER_ENVIRONMENT= \
-  RANCHER_CACERT= \
+    YAML_VERSION=1.6 \
+    RANCHER_URL= \
+    RANCHER_ACCESS_KEY= \
+    RANCHER_SECRET_KEY= \
+    RANCHER_ENVIRONMENT= \
+    RANCHER_CACERT=
 
 ENV KUBE_LATEST_VERSION=v1.11.0
 ENV HELM_VERSION=v2.9.1
@@ -20,14 +20,14 @@ RUN chmod +x /docker-entrypoint.sh
 
 # Install dependencies and rancher
 RUN apk update && \
-	apk upgrade && \
-	apk add --no-cache ca-certificates && \
-	apk add openssh-client && \
-	apk add iputils && \
-	apk add iproute2 && \
-	apk add curl && \
-	apk add bash && \
-  apk add --update gettext tar gzip
+    apk upgrade && \
+    apk add --no-cache ca-certificates && \
+    apk add openssh-client && \
+    apk add iputils && \
+    apk add iproute2 && \
+    apk add curl && \
+    apk add bash && \
+    apk add --update gettext tar gzip
   
 RUN curl -L https://storage.googleapis.com/kubernetes-release/release/${KUBE_LATEST_VERSION}/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl
 
