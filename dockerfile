@@ -1,9 +1,9 @@
-FROM alpine:3.7
+FROM alpine:3.8
 
 MAINTAINER Chris McKee <pcdevils@gmail.com>
 
 # Define rancher version
-ENV RANCHER_CLI_VERSION=v2.0.4-rc1 \
+ENV RANCHER_CLI_VERSION=v2.0.5 \
     YAML_VERSION=1.6 \
     RANCHER_URL= \
     RANCHER_ACCESS_KEY= \
@@ -12,7 +12,7 @@ ENV RANCHER_CLI_VERSION=v2.0.4-rc1 \
     RANCHER_CACERT=
 
 ENV KUBE_LATEST_VERSION=v1.11.0
-ENV HELM_VERSION=v2.9.1
+ENV HELM_VERSION=v2.11.0
 ENV HELM_FILENAME=helm-${HELM_VERSION}-linux-amd64.tar.gz
 
 ADD docker-entrypoint.sh /
