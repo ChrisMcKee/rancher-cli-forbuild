@@ -1,9 +1,9 @@
 FROM alpine:3.8
 
-MAINTAINER Chris McKee <pcdevils@gmail.com>
+MAINTAINER Chris McKee <pcdevils+ranchercli@gmail.com>
 
 # Define rancher version
-ENV RANCHER_CLI_VERSION=v2.0.5 \
+ENV RANCHER_CLI_VERSION=v2.0.6 \
     YAML_VERSION=1.6 \
     RANCHER_URL= \
     RANCHER_ACCESS_KEY= \
@@ -11,7 +11,7 @@ ENV RANCHER_CLI_VERSION=v2.0.5 \
     RANCHER_ENVIRONMENT= \
     RANCHER_CACERT=
 
-ENV KUBE_LATEST_VERSION=v1.11.0
+ENV KUBE_LATEST_VERSION=v1.13.0
 ENV HELM_VERSION=v2.11.0
 ENV HELM_FILENAME=helm-${HELM_VERSION}-linux-amd64.tar.gz
 
