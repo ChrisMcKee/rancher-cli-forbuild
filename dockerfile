@@ -14,7 +14,6 @@ ENV RANCHER_CLI_VERSION=v2.4.3 \
 #https://storage.googleapis.com/kubernetes-release/release/stable.txt
 ENV KUBE_LATEST_VERSION=v1.18.2
 ENV HELM_VERSION=v3.2.1
-ENV HELM_FILENAME=helm-${HELM_VERSION}-linux-amd64.tar.gz
 
 ADD docker-entrypoint.sh /
 RUN chmod +x /docker-entrypoint.sh
@@ -32,7 +31,7 @@ RUN apk update && \
   
 RUN curl -L https://storage.googleapis.com/kubernetes-release/release/${KUBE_LATEST_VERSION}/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl
 
-RUN curl -L https://storage.googleapis.com/kubernetes-helm/${HELM_FILENAME} | tar xz && mv linux-amd64/helm /bin/helm && rm -rf linux-amd64
+RUN curl -L https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz | tar xz && mv linux-amd64/helm /bin/helm && rm -rf linux-amd64
 
 RUN apk add --quiet --no-cache --virtual build-dependencies curl
 
