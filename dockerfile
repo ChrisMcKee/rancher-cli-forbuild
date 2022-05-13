@@ -12,7 +12,7 @@ ENV RANCHER_CLI_VERSION=v2.6.0 \
     RANCHER_CACERT=
 
 #https://storage.googleapis.com/kubernetes-release/release/stable.txt
-ENV KUBE_LATEST_VERSION=v1.23.2
+ENV KUBE_LATEST_VERSION=v1.24.0
 ENV HELM_VERSION=v3.8.0
 
 ADD docker-entrypoint.sh /
