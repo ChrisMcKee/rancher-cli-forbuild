@@ -51,4 +51,4 @@ ENTRYPOINT ["/docker-entrypoint.sh"]
 WORKDIR /home/rancher-cli
 
 # Executing defaults
-CMD ["/docker-entrypoint.sh & /bin/sh"]
+CMD ["/bin/sh"]
