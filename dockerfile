@@ -3,7 +3,7 @@ FROM alpine:3
 MAINTAINER Chris McKee <pcdevils+ranchercli@gmail.com>
 
 # Define rancher version
-ENV RANCHER_CLI_VERSION=v2.6.5 \
+ENV RANCHER_CLI_VERSION=v2.6.7 \
     YAML_VERSION=1.6 \
     RANCHER_URL= \
     RANCHER_ACCESS_KEY= \
@@ -12,8 +12,8 @@ ENV RANCHER_CLI_VERSION=v2.6.5 \
     RANCHER_CACERT=
 
 #https://storage.googleapis.com/kubernetes-release/release/stable.txt
-ENV KUBE_LATEST_VERSION=v1.24.0
-ENV HELM_VERSION=v3.8.2
+ENV KUBE_LATEST_VERSION=v1.25.1
+ENV HELM_VERSION=v3.9.0
 
 ADD docker-entrypoint.sh /
 RUN chmod +x /docker-entrypoint.sh
