@@ -1,10 +1,16 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
-mkdir -p /home/rancher-cli/.rancher
+if [ -z "$RANCHER_ACCESS_KEY" ]; then
+  echo "No rancher vars present"
+  exec "$@"
+  exit 0
+fi
+
+mkdir -p ~/.rancher
 
 echo Writing rancher CLI2 file ...
 
-tee ~/.rancher/cli2.json > /dev/null <<EOF
+tee ~/.rancher/cli2.json >/dev/null <<EOF
 {
   "Servers":
   {
