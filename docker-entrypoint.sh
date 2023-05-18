@@ -6,7 +6,7 @@ if [ -z "$RANCHER_ACCESS_KEY" ]; then
   exit 0
 fi
 
-mkdir -p /home/rancher-cli/.rancher
+mkdir -p ~/.rancher
 
 echo Writing rancher CLI2 file ...
 

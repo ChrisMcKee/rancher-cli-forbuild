@@ -95,12 +95,12 @@ kube_subst() {
   envsubst <$1 >$output_file
 
   # Validate yaml using python and PyYAML
-  yq $output_file
+  yq "$output_file"
 
   # check if the yaml is valid
   if [ $? -eq 0 ]; then
+    cat -b $output_file
     msg "${GREEN} ---  YAML file is valid"
-    cat $output_file
   else
     # remove the invalid file
     rm $output_file
