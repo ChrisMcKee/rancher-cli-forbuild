@@ -2,7 +2,10 @@ name: Version
 
 on:
   workflow_dispatch:
-    
+
+permissions:
+  contents: write
+
 jobs:
   docker:
     runs-on: ubuntu-latest
@@ -12,3 +15,4 @@ jobs:
       - run: |
           NOW=$(date +"%Y-%m-%d-%H%M")
           git tag "v${NOW}"
+          git push origin "v${NOW}"
