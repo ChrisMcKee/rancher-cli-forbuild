@@ -4,7 +4,6 @@ MAINTAINER Chris McKee <pcdevils+ranchercli@gmail.com>
 
 # Define rancher version
 ENV RANCHER_CLI_VERSION=v2.7.0 \
-    YAML_VERSION=1.6 \
     RANCHER_URL= \
     RANCHER_ACCESS_KEY= \
     RANCHER_SECRET_KEY= \
@@ -13,7 +12,7 @@ ENV RANCHER_CLI_VERSION=v2.7.0 \
 
 #https://storage.googleapis.com/kubernetes-release/release/stable.txt
 ENV KUBE_LATEST_VERSION=v1.25.4
-ENV HELM_VERSION=v3.10.0
+ENV HELM_VERSION=v3.12.0
 
 ADD docker-entrypoint.sh /
 RUN chmod +x /docker-entrypoint.sh
@@ -28,6 +27,8 @@ RUN apk update && \
     apk add curl && \
     apk add bash && \
     apk add --update gettext tar gzip
+    
+RUN wget $(curl -s https://api.github.com/repos/mikefarah/yq/releases/latest | grep browser_download_url | grep linux_amd64 | cut -d '"' -f 4) -O /usr/bin/yq && chmod +x /usr/bin/yq
   
 RUN curl -L https://storage.googleapis.com/kubernetes-release/release/${KUBE_LATEST_VERSION}/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl
 
