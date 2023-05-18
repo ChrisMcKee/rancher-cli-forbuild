@@ -1,49 +1,33 @@
 FROM alpine:3
 
-MAINTAINER Chris McKee <pcdevils+ranchercli@gmail.com>
-
 # Define rancher version
 ENV RANCHER_CLI_VERSION=v2.7.0 \
-    YAML_VERSION=1.6 \
-    RANCHER_URL= \
-    RANCHER_ACCESS_KEY= \
-    RANCHER_SECRET_KEY= \
-    RANCHER_ENVIRONMENT= \
-    RANCHER_CACERT=
+  RANCHER_URL= \
+  RANCHER_ACCESS_KEY= \
+  RANCHER_SECRET_KEY= \
+  RANCHER_ENVIRONMENT= \
+  RANCHER_CACERT=
 
 #https://storage.googleapis.com/kubernetes-release/release/stable.txt
-ENV KUBE_LATEST_VERSION=v1.25.4
-ENV HELM_VERSION=v3.10.0
+ENV HELM_VERSION=v3.12.0
 
-ADD docker-entrypoint.sh /
-RUN chmod +x /docker-entrypoint.sh
+COPY --chmod=755 docker-entrypoint.sh /
+COPY --chmod=755 kubesubst.sh /usr/local/bin/kubesubst
+COPY --chmod=755 deploy.sh /usr/local/bin/deploy
 
 # Install dependencies and rancher
-RUN apk update && \
-    apk upgrade && \
-    apk add --no-cache ca-certificates && \
-    apk add openssh-client && \
-    apk add iputils && \
-    apk add iproute2 && \
-    apk add curl && \
-    apk add bash && \
-    apk add --update gettext tar gzip
-  
-RUN curl -L https://storage.googleapis.com/kubernetes-release/release/${KUBE_LATEST_VERSION}/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl
-
-RUN curl -L https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz | tar xz && mv linux-amd64/helm /bin/helm && rm -rf linux-amd64
-
-RUN apk add --quiet --no-cache --virtual build-dependencies curl
-
-RUN curl -sSL "https://github.com/rancher/cli/releases/download/${RANCHER_CLI_VERSION}/rancher-linux-amd64-${RANCHER_CLI_VERSION}.tar.gz" | tar -xz -C /usr/local/bin/ --strip-components=2
-
-RUN chmod +x /usr/local/bin/rancher && \
+RUN cd /tmp && apk update && \
+  apk upgrade && \
+  apk add --update --quiet --no-cache ca-certificates openssh-client iputils iproute2 curl bash gettext tar gzip envsubst bash && \
+  apk add --update --quiet --no-cache --virtual build-dependencies && \
+  wget $(curl -s https://api.github.com/repos/mikefarah/yq/releases/latest | grep browser_download_url | grep linux_amd64 | cut -d '"' -f 4) -O /usr/local/bin/yq && chmod +x /usr/local/bin/yq && \
+  curl -L https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz | tar xz && mv linux-amd64/helm /bin/helm && rm -rf linux-amd64 && \
+  curl -sSL "https://github.com/rancher/cli/releases/download/${RANCHER_CLI_VERSION}/rancher-linux-amd64-${RANCHER_CLI_VERSION}.tar.gz" | tar -xz -C /usr/local/bin/ --strip-components=2 && \
+  curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && mv kubectl /usr/local/bin/kubectl && \
+  chmod +x /usr/local/bin/rancher && \
   chmod +x /usr/local/bin/kubectl && \
-	apk del build-dependencies && \
-	rm -rf /var/cache/apk/*
-
-RUN adduser -S rancher-cli
-USER rancher-cli
+  apk del build-dependencies && \
+  rm -rf /var/cache/apk/* && rm -rf /tmp/*
 
 ENTRYPOINT ["/docker-entrypoint.sh"] 
 
@@ -51,4 +35,6 @@ ENTRYPOINT ["/docker-entrypoint.sh"]
 WORKDIR /home/rancher-cli
 
 # Executing defaults
-CMD ["/bin/sh"]
+CMD ["/bin/bash"]
+
+LABEL maintainer="Chris McKee <pcdevils+ranchercli@gmail.com>"
