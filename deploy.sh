@@ -4,7 +4,7 @@ PS4='l$LINENO: '
 set -Eeuo pipefail
 trap cleanup SIGINT SIGTERM ERR EXIT
 
-alias "kubectl=rancher kubectl"
+alias "k8=rancher kubectl"
 
 script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
 
@@ -95,7 +95,7 @@ kube_subst() {
   envsubst <$1 >$output_file
 
   # Validate yaml using python and PyYAML
-  yq "$output_file"
+  yq "$output_file" > /dev/null
 
   # check if the yaml is valid
   if [ $? -eq 0 ]; then
@@ -114,7 +114,7 @@ kube_subst() {
 
 deploy_to_k8s() {
 
-  kubectl apply -f $1
+  k8 apply -f $1
 
   # Validate
   # Extract all Deployment name + namespaces
@@ -131,7 +131,7 @@ deploy_to_k8s() {
       read -r namespace name <<<"$deployment"
       echo "Namespace: $namespace"
       echo "Name: $name"
-      kubectl rollout status "deployment/${deployment}" --namespace $namespace
+      k8 rollout status "deployment/${deployment}" --namespace $namespace
     done <<<"$deployments"
   else
     echo "Validating Deployment:"
@@ -139,7 +139,7 @@ deploy_to_k8s() {
     read -r namespace name <<<"$deployments"
     echo "Namespace: $namespace"
     echo "Name: $name"
-    kubectl rollout status "deployment/${deployment}" --namespace $namespace
+    k8 rollout status "deployment/${deployment}" --namespace $namespace
   fi
 }
 
