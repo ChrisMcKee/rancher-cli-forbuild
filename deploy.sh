@@ -169,8 +169,40 @@ monitor_deployment_rollback_on_fail() {
   done
 }
 
+create_ranchercli_config(){
+
+if [ -z "$RANCHER_ACCESS_KEY" ] || [ -z "$RANCHER_SECRET_KEY" ] || [ -z "$RANCHER_URL" ] || [ -z "$RANCHER_ENVIRONMENT" ]; then
+  echo "No rancher vars present"
+  exec "$@"
+  exit 0
+fi
+
+mkdir -p ~/.rancher
+
+echo Writing rancher CLI2 file ...
+
+tee ~/.rancher/cli2.json >/dev/null <<EOF
+{
+  "Servers":
+  {
+    "rancherDefault":
+    {
+      "accessKey":"$RANCHER_ACCESS_KEY",
+      "secretKey":"$RANCHER_SECRET_KEY",
+      "tokenKey":"$RANCHER_ACCESS_KEY:RANCHER_SECRET_KEY",
+      "url":"$RANCHER_URL",
+      "project":"$RANCHER_ENVIRONMENT",
+      "cacert":"$RANCHER_CACERT"
+    }
+  },
+  "CurrentServer":"rancherDefault"
+}
+EOF
+
+}
+
 check_connectivity() {
-  kubectl version >/dev/null
+  kubectl version --short >/dev/null
   if [[ $? -ne 0 ]]; then
     msg "${RED} ---  Failed to connect to Kubernetes server"
     die "Exiting due to error"
@@ -236,13 +268,11 @@ else
   set +o allexport
 fi
 
-#ensure the 
-/docker-entrypoint.sh
-
 # envsubst the yaml file
 validate_vars_present "$yaml_file"
 hr
 kube_subst "$yaml_file"
 hr
+create_ranchercli_config
 check_connectivity
 deploy_to_k8s "${yaml_file}"
