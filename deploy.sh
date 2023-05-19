@@ -12,7 +12,7 @@ usage() {
   cat <<EOF # remove the space between << and EOF, this is due to web plugin issue
 Usage: $(
     basename "${BASH_SOURCE[0]}"
-  ) [-h] [-cd] -checkdeployment deployment-file.yml [env-file...]
+  ) [-h] [-cd] --checkdeployment deployment-file.yml [env-file...]
 
 Script description here.
 
@@ -129,11 +129,9 @@ kube_subst() {
   # check if the yaml is valid
   if [ $? -eq 0 ]; then
     msg "${GREEN} ---  YAML file is valid"
-    if [ "$verbose" = true ]; then
+    if [ "${verbose}" = true ]; then
       msg "${YELLOW} ---  Outputting configuration"
-      cat "$output_file" &
-      cat_pid=$!
-      wait "$cat_pid"
+      cat "$output_file"
     fi
   else
     # remove the invalid file
@@ -220,7 +218,7 @@ deploy_to_k8s() {
 
   rancher kubectl apply -f "$1"
 
-  if [ "$check_deployment" = true ]; then
+  if [ "${check_deployment}" = false ]; then
     msg "${YELLOW} ---  Skipping validation"
     return 0
   fi
