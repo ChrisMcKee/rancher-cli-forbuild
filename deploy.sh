@@ -4,7 +4,7 @@ PS4='l$LINENO: '
 set -Eeuo pipefail
 trap cleanup SIGINT SIGTERM ERR EXIT
 
-alias "kubectl=rancher kubectl"
+export TERM=xterm
 
 script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
 
