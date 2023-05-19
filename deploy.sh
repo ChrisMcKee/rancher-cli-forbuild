@@ -129,7 +129,7 @@ kube_subst() {
   # check if the yaml is valid
   if [ $? -eq 0 ]; then
     msg "${GREEN} ---  YAML file is valid"
-    if [[ $verbose ]]; then
+    if [ "$verbose" = true ]; then
       msg "${YELLOW} ---  Outputting configuration"
       cat "$output_file" &
       cat_pid=$!
@@ -220,7 +220,7 @@ deploy_to_k8s() {
 
   rancher kubectl apply -f "$1"
 
-  if [[ ! $check_deployment ]]; then
+  if [ "$check_deployment" = true ]; then
     msg "${YELLOW} ---  Skipping validation"
     return 0
   fi
