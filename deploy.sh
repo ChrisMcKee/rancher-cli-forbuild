@@ -4,11 +4,15 @@ PS4='l$LINENO: '
 set -Eeuo pipefail
 trap cleanup SIGINT SIGTERM ERR EXIT
 
+alias "kubectl=rancher kubectl"
+
 script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
 
 usage() {
   cat <<EOF # remove the space between << and EOF, this is due to web plugin issue
-Usage: $(basename "${BASH_SOURCE[0]}") [-h] [-V] -validate deployment-file.yml [env-file...]
+Usage: $(
+    basename "${BASH_SOURCE[0]}"
+  ) [-h] [-V] -validate deployment-file.yml [env-file...]
 
 Script description here.
 
@@ -32,6 +36,10 @@ setup_colors() {
   else
     NOFORMAT='' RED='' GREEN='' ORANGE='' BLUE='' PURPLE='' CYAN='' YELLOW=''
   fi
+}
+
+hr() {
+  printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' "${1:--}"
 }
 
 msg() {
@@ -74,12 +82,31 @@ parse_params() {
   return 0
 }
 
+validate_vars_present() {
+  exitCode=0
+  vars=$(awk 'BEGIN{RS=" ";FS="\\$\\{|\\}"} /\$\{[^\}]+\}/ {print $2}' $1 | sort -u)
+
+  # Check for the existence of each in the current environment
+  for VAR in $vars; do
+    # Using parameter substitution ${!var} to get value of variable named $var
+    if [[ ${!VAR:-"unset"} == "unset" ]]; then
+      msg "${RED} ---  ERROR: The environment variable $VAR is missing"
+      exitCode=1
+    else
+      msg "${GREEN} ---  ${VAR} is present set to ${!VAR}"
+    fi
+  done
+  if [ $exitCode -eq 1 ]; then
+    die "Exiting due to error"
+  fi
+}
+
 kube_subst() {
   # check if yq is installed and has PyYAML library
   # used for validation
   if ! command -v yq &>/dev/null; then
     msg "${RED} --- yq could not be found. Install it https://mikefarah.gitbook.io/yq/v/v3.x/"
-    exit 1
+    die "Exiting due to error"
   fi
 
   # get the file name without extension
@@ -93,12 +120,12 @@ kube_subst() {
   envsubst <$1 >$output_file
 
   # Validate yaml using python and PyYAML
-  yq "$output_file" > /dev/null
+  yq $output_file
 
   # check if the yaml is valid
   if [ $? -eq 0 ]; then
-    cat -b $output_file
     msg "${GREEN} ---  YAML file is valid"
+    cat $output_file
   else
     # remove the invalid file
     rm $output_file
@@ -110,34 +137,76 @@ kube_subst() {
   return 0
 }
 
+monitor_deployment_rollback_on_fail() {
+
+  DEPLOYMENT_NAME=$1
+  NAMESPACE=$2
+
+  # Monitor the deployment
+  while true; do
+    # Get the status of the pods
+    STATUS=$(kubectl get pods -n $NAMESPACE -l app=$DEPLOYMENT_NAME -o json | jq -r '.items[].status.phase')
+
+    # Check if any pods are in 'Failed' state
+    if echo $STATUS | grep -q 'Failed'; then
+      msg "${RED} ---  Deployment failed! Rolling back..."
+      kubectl rollout undo deployment $DEPLOYMENT_NAME -n $NAMESPACE
+      die "Exiting due to error"
+    fi
+
+    # Check if all pods are in 'Running' state
+    if echo $STATUS | grep -qv 'Running'; then
+      msg "${YELLOW} ---  Not all pods in Running state yet. Waiting..."
+    else
+      msg "${GREEN} ---  Deployment successful!"
+      exit 0
+    fi
+
+    # Wait before checking again
+    sleep 5
+  done
+}
+
+check_connectivity() {
+  kubectl version >/dev/null
+  if [[ $? -ne 0 ]]; then
+    msg "${RED} ---  Failed to connect to Kubernetes server"
+    die "Exiting due to error"
+  fi
+}
+
 deploy_to_k8s() {
 
-  rancher kubectl apply -f $1
+  kubectl apply -f "$1"
+
+  if [ $validate == true ]; then
+    return 0
+  fi
 
   # Validate
   # Extract all Deployment name + namespaces
   deployments=$(yq eval-all -N 'select(.kind == "Deployment") | .metadata.namespace + "~" + .metadata.name' $1 | sort -u)
 
   # Check if there are multiple deployments
-  if [ $(echo "$deployments" | wc -l) -gt 1 ]; then
-    echo "Multiple Deployments found."
+  if [ $(echo "$deployments-0" | wc -l) -gt 1 ]; then
+    msg "${GREEN} ---  Multiple Deployments found."
 
     # Iterate over each deployment
     while IFS= read -r deployment; do
-      echo "Validating Deployment:"
+      msg "${YELLOW} ---  Validating Deployment:"
       IFS="~"
       read -r namespace name <<<"$deployment"
-      echo "Namespace: $namespace"
-      echo "Name: $name"
-      rancher kubectl rollout status "deployment/${deployment}" --namespace $namespace
+      msg "${YELLOW} ---  Namespace: $namespace"
+      msg "${YELLOW} ---  Name: $name"
+      monitor_deployment_rollback_on_fail $name $namespace
     done <<<"$deployments"
   else
-    echo "Validating Deployment:"
+    msg "${GREEN} ---  Validating Deployment:"
     IFS="~"
     read -r namespace name <<<"$deployments"
-    echo "Namespace: $namespace"
-    echo "Name: $name"
-    rancher kubectl rollout status "deployment/${deployment}" --namespace $namespace
+    msg "${YELLOW} ---  Namespace: $namespace"
+    msg "${YELLOW} ---  Name: $name"
+    monitor_deployment_rollback_on_fail $name $namespace
   fi
 }
 
@@ -166,5 +235,9 @@ else
 fi
 
 # envsubst the yaml file
+validate_vars_present "$yaml_file"
+hr
 kube_subst "$yaml_file"
+hr
+check_connectivity
 deploy_to_k8s "${yaml_file}"
