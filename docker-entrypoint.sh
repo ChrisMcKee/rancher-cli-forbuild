@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-if [ -z "$RANCHER_ACCESS_KEY" ]; then
+if [ -z "$RANCHER_ACCESS_KEY" ] || [ -z "$RANCHER_SECRET_KEY" ] || [ -z "$RANCHER_URL" ] || [ -z "$RANCHER_ENVIRONMENT" ]; then
   echo "No rancher vars present"
   exec "$@"
   exit 0

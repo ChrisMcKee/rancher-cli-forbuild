@@ -234,6 +234,8 @@ else
   set +o allexport
 fi
 
+/docker-entrypoint.sh
+
 # envsubst the yaml file
 validate_vars_present "$yaml_file"
 hr
