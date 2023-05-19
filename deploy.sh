@@ -12,7 +12,7 @@ usage() {
   cat <<EOF # remove the space between << and EOF, this is due to web plugin issue
 Usage: $(
     basename "${BASH_SOURCE[0]}"
-  ) [-h] [-V] -validate deployment-file.yml [env-file...]
+  ) [-h] [-cd] -checkdeployment deployment-file.yml [env-file...]
 
 Script description here.
 
@@ -20,7 +20,7 @@ Available options:
 
 -h, --help      Print this help and exit
 -v, --verbose   Print script debug info
--V, --validate  Validate the deployment has completed
+-cd, --checkdeployment  Validate the deployment has completed
 EOF
   exit
 }
@@ -55,7 +55,7 @@ die() {
 
 parse_params() {
   # default values of variables set from params
-  validate=false
+  check_deployment=false
   verbose=false
   env_file=''
 
@@ -71,7 +71,7 @@ parse_params() {
       env_file="${2-}"
       shift
       ;;
-    -V | --validate) validate=true ;;
+    -cd | --checkdeployment) check_deployment=true ;;
     -?*) die "Unknown option: $1" ;;
     *) break ;;
     esac
@@ -130,13 +130,14 @@ kube_subst() {
   if [ $? -eq 0 ]; then
     msg "${GREEN} ---  YAML file is valid"
     if [[ $verbose ]]; then
-      cat $output_file &
+      msg "${YELLOW} ---  Outputting configuration"
+      cat "$output_file" &
       cat_pid=$!
       wait "$cat_pid"
     fi
   else
     # remove the invalid file
-    rm $output_file
+    rm "$output_file"
     die "YAML file is not valid"
   fi
 
@@ -208,7 +209,7 @@ EOF
 }
 
 check_connectivity() {
-  rancher kubectl version --short >/dev/null
+  rancher kubectl version >/dev/null
   if [[ $? -ne 0 ]]; then
     msg "${RED} ---  Failed to connect to Kubernetes server"
     die "Exiting due to error"
@@ -219,7 +220,8 @@ deploy_to_k8s() {
 
   rancher kubectl apply -f "$1"
 
-  if [[ ! $validate ]]; then
+  if [[ ! $check_deployment ]]; then
+    msg "${YELLOW} ---  Skipping validation"
     return 0
   fi
 
