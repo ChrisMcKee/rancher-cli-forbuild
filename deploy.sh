@@ -125,7 +125,9 @@ kube_subst() {
   # check if the yaml is valid
   if [ $? -eq 0 ]; then
     msg "${GREEN} ---  YAML file is valid"
-    cat $output_file
+    cat $output_file &
+    cat_pid=$!
+    wait "$cat_pid"
   else
     # remove the invalid file
     rm $output_file
@@ -234,6 +236,7 @@ else
   set +o allexport
 fi
 
+#ensure the 
 /docker-entrypoint.sh
 
 # envsubst the yaml file
