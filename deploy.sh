@@ -56,12 +56,16 @@ die() {
 parse_params() {
   # default values of variables set from params
   validate=false
+  verbose=false
   env_file=''
 
   while :; do
     case "${1-}" in
     -h | --help) usage ;;
-    -v | --verbose) set -x ;;
+    -v | --verbose) 
+      set -x 
+      verbose=true
+      ;;
     --no-color) NO_COLOR=1 ;;
     -e | --env-file)
       env_file="${2-}"
@@ -125,9 +129,11 @@ kube_subst() {
   # check if the yaml is valid
   if [ $? -eq 0 ]; then
     msg "${GREEN} ---  YAML file is valid"
-    cat $output_file &
-    cat_pid=$!
-    wait "$cat_pid"
+    if [ $verbose == true ]; then
+      cat $output_file &
+      cat_pid=$!
+      wait "$cat_pid"
+    fi
   else
     # remove the invalid file
     rm $output_file
@@ -213,7 +219,7 @@ deploy_to_k8s() {
 
   rancher kubectl apply -f "$1"
 
-  if [ $validate == true ]; then
+  if [ $validate == false ]; then
     return 0
   fi
 
