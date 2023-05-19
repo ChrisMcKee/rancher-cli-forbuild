@@ -147,12 +147,12 @@ monitor_deployment_rollback_on_fail() {
   # Monitor the deployment
   while true; do
     # Get the status of the pods
-    STATUS=$(kubectl get pods -n $NAMESPACE -l app=$DEPLOYMENT_NAME -o json | jq -r '.items[].status.phase')
+    STATUS=$(rancher kubectl get pods -n $NAMESPACE -l app=$DEPLOYMENT_NAME -o json | jq -r '.items[].status.phase')
 
     # Check if any pods are in 'Failed' state
     if echo $STATUS | grep -q 'Failed'; then
       msg "${RED} ---  Deployment failed! Rolling back..."
-      kubectl rollout undo deployment $DEPLOYMENT_NAME -n $NAMESPACE
+      rancher kubectl rollout undo deployment $DEPLOYMENT_NAME -n $NAMESPACE
       die "Exiting due to error"
     fi
 
@@ -169,8 +169,40 @@ monitor_deployment_rollback_on_fail() {
   done
 }
 
+create_ranchercli_config(){
+
+if [ -z "$RANCHER_ACCESS_KEY" ] || [ -z "$RANCHER_SECRET_KEY" ] || [ -z "$RANCHER_URL" ] || [ -z "$RANCHER_ENVIRONMENT" ]; then
+  echo "No rancher vars present"
+  exec "$@"
+  exit 0
+fi
+
+mkdir -p ~/.rancher
+
+echo Writing rancher CLI2 file ...
+
+tee ~/.rancher/cli2.json >/dev/null <<EOF
+{
+  "Servers":
+  {
+    "rancherDefault":
+    {
+      "accessKey":"$RANCHER_ACCESS_KEY",
+      "secretKey":"$RANCHER_SECRET_KEY",
+      "tokenKey":"$RANCHER_ACCESS_KEY:RANCHER_SECRET_KEY",
+      "url":"$RANCHER_URL",
+      "project":"$RANCHER_ENVIRONMENT",
+      "cacert":"$RANCHER_CACERT"
+    }
+  },
+  "CurrentServer":"rancherDefault"
+}
+EOF
+
+}
+
 check_connectivity() {
-  kubectl version >/dev/null
+  rancher kubectl version --short >/dev/null
   if [[ $? -ne 0 ]]; then
     msg "${RED} ---  Failed to connect to Kubernetes server"
     die "Exiting due to error"
@@ -179,7 +211,7 @@ check_connectivity() {
 
 deploy_to_k8s() {
 
-  kubectl apply -f "$1"
+  rancher kubectl apply -f "$1"
 
   if [ $validate == true ]; then
     return 0
@@ -236,13 +268,11 @@ else
   set +o allexport
 fi
 
-#ensure the 
-/docker-entrypoint.sh
-
 # envsubst the yaml file
 validate_vars_present "$yaml_file"
 hr
 kube_subst "$yaml_file"
 hr
+create_ranchercli_config
 check_connectivity
 deploy_to_k8s "${yaml_file}"
