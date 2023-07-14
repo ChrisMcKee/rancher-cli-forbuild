@@ -19,7 +19,7 @@ COPY --chmod=755 smoke.sh /usr/local/bin/smoke
 # Install dependencies and rancher
 RUN cd /tmp && apk update && \
   apk upgrade && \
-  apk add --update --quiet --no-cache ca-certificates openssh-client iputils iproute2 curl bash gettext tar gzip envsubst bash jq yq ncurses && \
+  apk add --update --quiet --no-cache ca-certificates openssh-client iputils iproute2 curl bash gettext tar gzip envsubst bash jq yq ncurses coreutils && \
   apk add --update --quiet --no-cache --virtual build-dependencies && \
   curl -L https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz | tar xz && mv linux-amd64/helm /bin/helm && rm -rf linux-amd64 && \
   curl -sSL "https://github.com/rancher/cli/releases/download/${RANCHER_CLI_VERSION}/rancher-linux-amd64-${RANCHER_CLI_VERSION}.tar.gz" | tar -xz -C /usr/local/bin/ --strip-components=2 && \
