@@ -149,32 +149,41 @@ monitor_deployment_rollback_on_fail() {
   DEPLOYMENT_NAME=$1
   NAMESPACE=$2
 
+  # Timeout variables
+  TIMEOUT=300  # 5 minutes
+  ELAPSED=0
+
   # Monitor the deployment
   while true; do
-    # Get the status of the pods
-    STATUS=$(rancher kubectl get pods -n $NAMESPACE -l app=$DEPLOYMENT_NAME -o json | jq -r '.items[].status.phase')
+    # Get the rollout status
+    ROLLOUT_STATUS="$(rancher kubectl rollout status deployment/$DEPLOYMENT_NAME -n $NAMESPACE)"
 
-    # Check if any pods are in 'Failed' state
-    if echo $STATUS | grep -q 'Failed'; then
-      msg "${RED} ---  Deployment failed! Rolling back..."
-      rancher kubectl rollout undo deployment $DEPLOYMENT_NAME -n $NAMESPACE
-      die "Exiting due to error"
-    fi
-
-    # Check if all pods are in 'Running' state
-    if echo $STATUS | grep -qv 'Running'; then
-      msg "${YELLOW} ---  Not all pods in Running state yet. Waiting..."
-    else
+    # Check if deployment has successfully rolled out
+    if echo "${ROLLOUT_STATUS}" | grep -q 'successfully rolled out'; then
       msg "${GREEN} ---  Deployment successful!"
       exit 0
     fi
 
+    # Check for a timeout
+    if [ $ELAPSED -ge $TIMEOUT ]; then
+      msg "${RED} ---  Timeout reached! Rolling back..."
+      rancher kubectl rollout undo deployment $DEPLOYMENT_NAME -n $NAMESPACE
+      die "Exiting due to timeout"
+    fi
+
     # Wait before checking again
     sleep 5
+    ELAPSED=$((ELAPSED+5))
   done
 }
 
 create_ranchercli_config() {
+
+  RANCHER_ACCESS_KEY=$1
+  RANCHER_SECRET_KEY=$2
+  RANCHER_URL=$3
+  RANCHER_ENVIRONMENT=$4
+  RANCHER_CACERT=$5
 
   if [ -z "$RANCHER_ACCESS_KEY" ] || [ -z "$RANCHER_SECRET_KEY" ] || [ -z "$RANCHER_URL" ] || [ -z "$RANCHER_ENVIRONMENT" ]; then
     echo "No rancher vars present"
@@ -220,7 +229,7 @@ deploy_to_k8s() {
 
   if [ "${check_deployment}" = false ]; then
     msg "${YELLOW} ---  Skipping validation"
-    return 0
+    exit 0
   fi
 
   # Validate
@@ -279,6 +288,6 @@ validate_vars_present "$yaml_file"
 hr
 kube_subst "$yaml_file"
 hr
-create_ranchercli_config
+create_ranchercli_config $RANCHER_ACCESS_KEY $RANCHER_SECRET_KEY $RANCHER_URL $RANCHER_ENVIRONMENT $RANCHER_CACERT
 check_connectivity
 deploy_to_k8s "${yaml_file}"
