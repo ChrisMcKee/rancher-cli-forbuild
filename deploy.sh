@@ -146,8 +146,8 @@ kube_subst() {
 
 monitor_deployment_rollback_on_fail() {
 
-  DEPLOYMENT_NAME=$1
-  NAMESPACE=$2
+  local deployment_name="$1"
+  local namespace="$2"
 
   # Timeout variables
   TIMEOUT=300  # 5 minutes
@@ -156,7 +156,7 @@ monitor_deployment_rollback_on_fail() {
   # Monitor the deployment
   while true; do
     # Get the rollout status
-    ROLLOUT_STATUS="$(rancher kubectl rollout status deployment/$DEPLOYMENT_NAME -n $NAMESPACE)"
+    ROLLOUT_STATUS="$(rancher kubectl rollout status deployment/${deployment_name} -n ${namespace})"
 
     # Check if deployment has successfully rolled out
     if echo "${ROLLOUT_STATUS}" | grep -q 'successfully rolled out'; then
@@ -167,7 +167,7 @@ monitor_deployment_rollback_on_fail() {
     # Check for a timeout
     if [ $ELAPSED -ge $TIMEOUT ]; then
       msg "${RED} ---  Timeout reached! Rolling back..."
-      rancher kubectl rollout undo deployment $DEPLOYMENT_NAME -n $NAMESPACE
+      rancher kubectl rollout undo deployment "${deployment_name}" -n "${namespace}"
       die "Exiting due to timeout"
     fi
 
@@ -179,13 +179,13 @@ monitor_deployment_rollback_on_fail() {
 
 create_ranchercli_config() {
 
-  RANCHER_ACCESS_KEY=$1
-  RANCHER_SECRET_KEY=$2
-  RANCHER_URL=$3
-  RANCHER_ENVIRONMENT=$4
-  RANCHER_CACERT=$5
+  local rancher_access_key="$1"
+  local rancher_secret_key="$2"
+  local rancher_url="$3"
+  local rancher_environment="$4"
+  local rancher_cacert="$5"
 
-  if [ -z "$RANCHER_ACCESS_KEY" ] || [ -z "$RANCHER_SECRET_KEY" ] || [ -z "$RANCHER_URL" ] || [ -z "$RANCHER_ENVIRONMENT" ]; then
+  if [ -z "${rancher_access_key}" ] || [ -z "${rancher_secret_key}" ] || [ -z "${rancher_url}" ] || [ -z "${rancher_environment}" ]; then
     echo "No rancher vars present"
     exec "$@"
     exit 0
@@ -201,12 +201,12 @@ create_ranchercli_config() {
   {
     "rancherDefault":
     {
-      "accessKey":"$RANCHER_ACCESS_KEY",
-      "secretKey":"$RANCHER_SECRET_KEY",
-      "tokenKey":"$RANCHER_ACCESS_KEY:RANCHER_SECRET_KEY",
-      "url":"$RANCHER_URL",
-      "project":"$RANCHER_ENVIRONMENT",
-      "cacert":"$RANCHER_CACERT"
+      "accessKey":"${rancher_access_key}",
+      "secretKey":"${rancher_secret_key}",
+      "tokenKey":"${rancher_access_key}:RANCHER_SECRET_KEY",
+      "url":"${rancher_url}",
+      "project":"${rancher_environment}",
+      "cacert":"${rancher_cacert}"
     }
   },
   "CurrentServer":"rancherDefault"
@@ -288,6 +288,6 @@ validate_vars_present "$yaml_file"
 hr
 kube_subst "$yaml_file"
 hr
-create_ranchercli_config "$RANCHER_ACCESS_KEY" "$RANCHER_SECRET_KEY" "$RANCHER_URL" "$RANCHER_ENVIRONMENT" "$RANCHER_CACERT"
+create_ranchercli_config "${RANCHER_ACCESS_KEY}" "${RANCHER_SECRET_KEY}" "${RANCHER_URL}" "${RANCHER_ENVIRONMENT}" "${RANCHER_CACERT:-}"
 check_connectivity
 deploy_to_k8s "${yaml_file}"
