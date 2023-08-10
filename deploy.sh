@@ -288,6 +288,6 @@ validate_vars_present "$yaml_file"
 hr
 kube_subst "$yaml_file"
 hr
-create_ranchercli_config $RANCHER_ACCESS_KEY $RANCHER_SECRET_KEY $RANCHER_URL $RANCHER_ENVIRONMENT $RANCHER_CACERT
+create_ranchercli_config "$RANCHER_ACCESS_KEY" "$RANCHER_SECRET_KEY" "$RANCHER_URL" "$RANCHER_ENVIRONMENT" "$RANCHER_CACERT"
 check_connectivity
 deploy_to_k8s "${yaml_file}"
