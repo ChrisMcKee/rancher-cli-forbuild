@@ -150,7 +150,7 @@ monitor_deployment_rollback_on_fail() {
   local namespace="$2"
 
   # Timeout variables
-  TIMEOUT=300  # 5 minutes
+  TIMEOUT=300 # 5 minutes
   ELAPSED=0
 
   # Monitor the deployment
@@ -173,7 +173,7 @@ monitor_deployment_rollback_on_fail() {
 
     # Wait before checking again
     sleep 5
-    ELAPSED=$((ELAPSED+5))
+    ELAPSED=$((ELAPSED + 5))
   done
 }
 
@@ -234,28 +234,32 @@ deploy_to_k8s() {
 
   # Validate
   # Extract all Deployment name + namespaces
-  deployments=$(yq eval-all -N 'select(.kind == "Deployment") | .metadata.namespace + "~" + .metadata.name' $1 | sort -u)
+  deployments=$(yq eval-all -N 'select(.kind == "Deployment") | .metadata.namespace + "~" + .metadata.name' "$1" | sort -u)
 
-  # Check if there are multiple deployments
-  if [ $(echo "$deployments-0" | wc -l) -gt 1 ]; then
-    msg "${GREEN} ---  Multiple Deployments found."
+  if [ -z "$deployments" ]; then
+    echo "No deployments found"
+  else
+    # Check if there are multiple deployments
+    if [ $(echo "$deployments-0" | wc -l) -gt 1 ]; then
+      msg "${GREEN} ---  Multiple Deployments found."
 
-    # Iterate over each deployment
-    while IFS= read -r deployment; do
-      msg "${YELLOW} ---  Validating Deployment:"
+      # Iterate over each deployment
+      while IFS= read -r deployment; do
+        msg "${YELLOW} ---  Validating Deployment:"
+        IFS="~"
+        read -r namespace name <<<"$deployment"
+        msg "${YELLOW} ---  Namespace: $namespace"
+        msg "${YELLOW} ---  Name: $name"
+        monitor_deployment_rollback_on_fail $name $namespace
+      done <<<"$deployments"
+    else
+      msg "${GREEN} ---  Validating Deployment:"
       IFS="~"
-      read -r namespace name <<<"$deployment"
+      read -r namespace name <<<"$deployments"
       msg "${YELLOW} ---  Namespace: $namespace"
       msg "${YELLOW} ---  Name: $name"
       monitor_deployment_rollback_on_fail $name $namespace
-    done <<<"$deployments"
-  else
-    msg "${GREEN} ---  Validating Deployment:"
-    IFS="~"
-    read -r namespace name <<<"$deployments"
-    msg "${YELLOW} ---  Namespace: $namespace"
-    msg "${YELLOW} ---  Name: $name"
-    monitor_deployment_rollback_on_fail $name $namespace
+    fi
   fi
 }
 
