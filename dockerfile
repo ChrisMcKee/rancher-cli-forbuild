@@ -1,7 +1,7 @@
 FROM alpine:3
 
 # Define rancher version
-ENV RANCHER_CLI_VERSION=v2.7.0 \
+ENV RANCHER_CLI_VERSION=v2.8.0 \
   RANCHER_URL= \
   RANCHER_ACCESS_KEY= \
   RANCHER_SECRET_KEY= \
@@ -9,7 +9,7 @@ ENV RANCHER_CLI_VERSION=v2.7.0 \
   RANCHER_CACERT=
 
 #https://storage.googleapis.com/kubernetes-release/release/stable.txt
-ENV HELM_VERSION=v3.12.0
+ENV HELM_VERSION=v3.14.0
 
 COPY --chmod=755 docker-entrypoint.sh /
 COPY --chmod=755 kubesubst.sh /usr/local/bin/kubesubst
