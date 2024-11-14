@@ -1,10 +1,14 @@
 name: Docker Image CI
 
 on:
+  workflow_dispatch:
   push:
     # Sequence of patterns matched against refs/tags
     tags:
       - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+  schedule:
+    - cron: '0 0 */14 * *' # Runs every 2 weeks
+    
 jobs:
   docker:
     runs-on: ubuntu-latest
@@ -23,7 +27,12 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Get the version
         id: get_version
-        run: echo ::set-output name=VERSION::$(echo $GITHUB_REF | cut -d / -f 3)
+        run: |
+          if [ "${{ github.event_name }}" == "schedule" ]; then
+            echo ::set-output name=VERSION::v$(date +"%Y-%m-%d-%H%M")
+          else
+            echo ::set-output name=VERSION::$(echo $GITHUB_REF | cut -d / -f 3)
+          fi
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
