@@ -25,7 +25,7 @@ fi
 # check if yq is installed and has PyYAML library
 # used for validation
 if ! command -v yq &>/dev/null; then
-	echo "yq could not be found. Install it https://mikefarah.gitbook.io/yq/v/v3.x/"
+	echo "yq could not be found. Install it https://mikefarah.gitbook.io/yq/v/v4.x/"
 	exit 1
 fi
 
