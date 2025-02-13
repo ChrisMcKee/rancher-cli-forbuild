@@ -36,3 +36,7 @@ smoke_report
 ```
 
 There's lots of examples in the readme.
+
+### Canary-Checker
+
+* https://github.com/flanksource/canary-checker
