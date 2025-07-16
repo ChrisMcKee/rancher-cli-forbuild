@@ -21,6 +21,7 @@ Available options:
 -h, --help      Print this help and exit
 -v, --verbose   Print script debug info
 -cd, --checkdeployment  Validate the deployment has completed
+-an, --annotategrafana  Annotate Grafana with deployment information
 EOF
   exit
 }
@@ -56,6 +57,7 @@ die() {
 parse_params() {
   # default values of variables set from params
   check_deployment=false
+  annotate_grafana=false
   verbose=false
   env_file=''
 
@@ -72,6 +74,7 @@ parse_params() {
       shift
       ;;
     -cd | --checkdeployment) check_deployment=true ;;
+    -an | --annotategrafana) annotate_grafana=true ;;
     -?*) die "Unknown option: $1" ;;
     *) break ;;
     esac
@@ -150,7 +153,7 @@ monitor_deployment_rollback_on_fail() {
   local namespace="$2"
 
   # Timeout variables
-  TIMEOUT=300 # 5 minutes
+  TIMEOUT=150 # 2.5 minutes
   ELAPSED=0
 
   # Monitor the deployment
@@ -226,6 +229,15 @@ check_connectivity() {
 deploy_to_k8s() {
 
   rancher kubectl apply -f "$1"
+  if [ "${annotate_grafana}" = true ]; then
+    DEPLOYMENT_NAME=$(yq eval '. | select(.kind == "Deployment") | .metadata.name' "$1" | head -n 1)
+    NAMESPACE=$(yq eval '. | select(.kind == "Deployment") | .metadata.namespace' "$1" | head -n 1)
+    CLUSTER=$(yq eval 'select(.kind == "Deployment") | .spec.template.spec.containers[0].env[] | select(.name == "CLUSTER") | .value' "$1" | head -n 1)
+    msg "${GREEN} ---  Annotating Grafana for $CLUSTER/$NAMESPACE/$DEPLOYMENT_NAME"
+    ./annotategrafana.sh "$CLUSTER" "$NAMESPACE" "$DEPLOYMENT_NAME"
+  else
+    msg "${YELLOW} ---  Skipping Annotation"
+  fi
 
   if [ "${check_deployment}" = false ]; then
     msg "${YELLOW} ---  Skipping validation"
@@ -267,7 +279,6 @@ parse_params "$@"
 setup_colors
 
 # script logic here
-
 msg "${RED}Read parameters:${NOFORMAT}"
 msg "- check deployment: ${check_deployment}"
 msg "- arguments: ${args[*]-}"
