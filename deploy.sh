@@ -44,12 +44,41 @@ hr() {
 }
 
 msg() {
-  echo >&2 -e "${1-}"
+  # Check if running in TeamCity
+  if [[ -n "${TEAMCITY_VERSION:-}" ]]; then
+    # Format message for TeamCity service messages
+    # Convert color escape sequences to TeamCity status
+    local text="${1-}"
+    if [[ $text == *"${RED}"* ]]; then
+      echo "##teamcity[message text='${text//${RED}/}' status='ERROR']"
+    elif [[ $text == *"${YELLOW}"* ]]; then
+      echo "##teamcity[message text='${text//${YELLOW}/}' status='WARNING']"
+    elif [[ $text == *"${GREEN}"* ]]; then
+      echo "##teamcity[progressMessage '${text//${GREEN}/}']"
+    else
+      # Remove any other color codes for TeamCity
+      local clean_text="${text//${NOFORMAT}/}"
+      clean_text="${clean_text//${BLUE}/}"
+      clean_text="${clean_text//${PURPLE}/}"
+      clean_text="${clean_text//${CYAN}/}"
+      clean_text="${clean_text//${ORANGE}/}"
+      echo "##teamcity[message text='${clean_text}']"
+    fi
+  else
+    # Regular output for non-TeamCity environments
+    echo >&2 -e "${1-}"
+  fi
 }
 
 die() {
   local msg=$1
   local code=${2-1} # default exit status 1
+  
+  # If in TeamCity, make errors more visible
+  if [[ -n "${TEAMCITY_VERSION:-}" ]]; then
+    echo "##teamcity[buildProblem description='${msg}']"
+  fi
+  
   msg "$msg"
   exit "$code"
 }
@@ -252,7 +281,7 @@ deploy_to_k8s() {
     echo "No deployments found"
   else
     # Check if there are multiple deployments
-    if [ $(echo "$deployments-0" | wc -l) -gt 1 ]; then
+    if [ "$(echo "$deployments-0" | wc -l)" -gt 1 ]; then
       msg "${GREEN} ---  Multiple Deployments found."
 
       # Iterate over each deployment
@@ -294,7 +323,8 @@ if [ -z "${env_file-unset}" ] || [ ! -f "${env_file}" ]; then
 else
   msg "${GREEN} ---  Loading env file ($env_file) into env"
   set -o allexport
-  source $env_file
+  # shellcheck source=/dev/null
+  source "$env_file"
   set +o allexport
 fi
 
