@@ -44,24 +44,26 @@ hr() {
 }
 
 msg() {
-  # Check if running in TeamCity
   if [[ -n "${TEAMCITY_VERSION:-}" ]]; then
     # Format message for TeamCity service messages
-    # Convert color escape sequences to TeamCity status
     local text="${1-}"
+    local clean_text="${text//${NOFORMAT}/}"
+    clean_text="${clean_text//${RED}/}"
+    clean_text="${clean_text//${GREEN}/}"
+    clean_text="${clean_text//${YELLOW}/}"
+    clean_text="${clean_text//${BLUE}/}"
+    clean_text="${clean_text//${PURPLE}/}"
+    clean_text="${clean_text//${CYAN}/}"
+    clean_text="${clean_text//${ORANGE}/}"
+    
+    # Then decide on message type based on original text
     if [[ $text == *"${RED}"* ]]; then
-      echo "##teamcity[message text='${text//${RED}/}' status='ERROR']"
+      echo "##teamcity[message text='${clean_text}' status='ERROR']"
     elif [[ $text == *"${YELLOW}"* ]]; then
-      echo "##teamcity[message text='${text//${YELLOW}/}' status='WARNING']"
+      echo "##teamcity[message text='${clean_text}']"
     elif [[ $text == *"${GREEN}"* ]]; then
-      echo "##teamcity[progressMessage '${text//${GREEN}/}']"
+      echo "##teamcity[progressMessage '${clean_text}']"
     else
-      # Remove any other color codes for TeamCity
-      local clean_text="${text//${NOFORMAT}/}"
-      clean_text="${clean_text//${BLUE}/}"
-      clean_text="${clean_text//${PURPLE}/}"
-      clean_text="${clean_text//${CYAN}/}"
-      clean_text="${clean_text//${ORANGE}/}"
       echo "##teamcity[message text='${clean_text}']"
     fi
   else
