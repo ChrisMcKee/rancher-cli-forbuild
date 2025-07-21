@@ -308,7 +308,7 @@ parse_params "$@"
 setup_colors
 
 # script logic here
-msg "${RED}Read parameters:${NOFORMAT}"
+msg "${GREEN}Read parameters:${NOFORMAT}"
 msg "- check deployment: ${check_deployment}"
 msg "- arguments: ${args[*]-}"
 
