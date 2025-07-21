@@ -58,7 +58,7 @@ msg() {
     
     # Then decide on message type based on original text
     if [[ $text == *"${RED}"* ]]; then
-      echo "##teamcity[message text='${clean_text}' status='ERROR']"
+      echo "##teamcity[message text='${clean_text}']"
     elif [[ $text == *"${YELLOW}"* ]]; then
       echo "##teamcity[message text='${clean_text}']"
     elif [[ $text == *"${GREEN}"* ]]; then
