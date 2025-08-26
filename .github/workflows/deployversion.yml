@@ -1,21 +1,21 @@
 name: Docker Image CI
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-  
+
 on:
   workflow_dispatch:
   push:
     # Sequence of patterns matched against refs/tags
     tags:
-      - 'v*'
+      - "v*"
   schedule:
-    - cron: '0 0 */14 * *' # Runs every 2 weeks
-    
+    - cron: "0 0 */14 * *" # Runs every 2 weeks
+
 jobs:
   docker:
     runs-on: ubuntu-latest
@@ -32,14 +32,29 @@ jobs:
       - name: Get the version
         id: get_version
         run: |
-          if [ "${{ github.event_name }}" == "schedule" ]; then
-            echo ::set-output name=VERSION::v$(date +"%Y-%m-%d-%H%M")
-          else
-            echo ::set-output name=VERSION::$(echo $GITHUB_REF | cut -d / -f 3)
-          fi
+          echo ::set-output name=VERSION::v$(date +"%Y-%m-%d-%H%M")
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
           tags: chrismckee/rancher-cli-forbuild:${{ steps.get_version.outputs.VERSION }},chrismckee/rancher-cli-forbuild:latest
+
+      - name: Create Tag
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git tag ${{ steps.get_version.outputs.VERSION }}
+          git push origin ${{ steps.get_version.outputs.VERSION }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ steps.get_version.outputs.VERSION }}
+          release_name: Release ${{ steps.get_version.outputs.VERSION }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
