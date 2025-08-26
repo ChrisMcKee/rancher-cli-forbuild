@@ -1,5 +1,17 @@
 #!/usr/bin/env bash
 
+log_msg() {
+  local status="${1:-NORMAL}"
+  shift
+  local text="$*"
+
+  if [ -n "$TEAMCITY_VERSION" ]; then
+    echo "##teamcity[message text='$text' errorDetails='' status='$status']"
+  else
+    echo "$text"
+  fi
+}
+
 # check if file name is provided as an argument
 if [ $# -eq 0 ]; then
 	echo "No arguments supplied. Please provide a YAML file."
@@ -40,14 +52,14 @@ output_file="${filename}_output.yaml"
 envsubst <$1 >$output_file
 
 # Validate yaml using python and PyYAML
-yq -v $output_file
+LOG_LEVEL=warning yq -v $output_file
 
 # check if the yaml is valid
 if [ $? -eq 0 ]; then
-	echo "YAML file is valid"
+	log_msg NORMAL "YAML file is valid"
 	cat $output_file
 else
-	echo "YAML file is not valid"
+	log_msg ERROR "YAML file is not valid"
 	# remove the invalid file
 	rm $output_file
 	exit 1
