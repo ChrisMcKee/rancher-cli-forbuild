@@ -12,14 +12,14 @@ if [ ! -f $1 ]; then
 	exit 1
 fi
 
-# check if the file exists
-if [ ! -f $2 ]; then
-	echo "No env file set or found, assuming env is all set in CI"
-else
+# check if the second argument (env file) is provided and exists
+if [ -n "$2" ] && [ -f "$2" ]; then
 	echo "Loading env file into env"
 	set -o allexport
-	source $2
+	source "$2"
 	set +o allexport
+else
+	echo "No env file set or found, assuming env is all set in CI"
 fi
 
 # check if yq is installed and has PyYAML library
