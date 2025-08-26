@@ -26,7 +26,6 @@ require_env "RANCHER_ACCESS_KEY"
 require_env "RANCHER_SECRET_KEY"
 require_env "RANCHER_URL"
 require_env "RANCHER_ENVIRONMENT"
-require_env "RANCHER_CACERT"
 
 mkdir -p ~/.rancher
 
