@@ -1,7 +1,8 @@
+FROM ghcr.io/opentofu/opentofu:minimal AS tofu
 FROM alpine:3
 
 # Define rancher version
-ENV RANCHER_CLI_VERSION=v2.12.0 \
+ENV RANCHER_CLI_VERSION=v2.12.1 \
   RANCHER_URL= \
   RANCHER_ACCESS_KEY= \
   RANCHER_SECRET_KEY= \
@@ -17,6 +18,7 @@ COPY --chmod=755 deploy.sh /usr/local/bin/deploy
 COPY --chmod=755 smoke.sh /usr/local/bin/smoke
 COPY --chmod=755 annotategrafana.sh /usr/local/bin/annotategrafana
 COPY --chmod=755 generate-kubecfg.sh /usr/local/bin/generate-kubecfg
+COPY --chmod=755 --from=tofu /usr/local/bin/tofu /usr/local/bin/tofu
 
 # Install dependencies and rancher
 RUN cd /tmp && apk update && \
