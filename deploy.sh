@@ -258,8 +258,8 @@ check_connectivity() {
 }
 
 deploy_to_k8s() {
-
-  rancher kubectl apply -f "$1"
+  
+  rancher kubectl apply --server-side --force-conflicts -f "$1"
   if [ "${annotate_grafana}" = true ]; then
     DEPLOYMENT_NAME=$(yq eval '. | select(.kind == "Deployment") | .metadata.name' "$1" | head -n 1)
     NAMESPACE=$(yq eval '. | select(.kind == "Deployment") | .metadata.namespace' "$1" | head -n 1)
